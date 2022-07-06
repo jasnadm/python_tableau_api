@@ -1,0 +1,63 @@
+#  Connecting to Tableau Server with Tableau API and downloading a pdf version of a specified view
+
+from tableau_api_lib import TableauServerConnection
+from tableau_api_lib.utils.querying import get_views_dataframe, get_sites_dataframe
+
+# Defining variables
+DASHBOARD_VIEW_NAME = '<YOUR_DASHBOARD_VIEW_NAME>'
+# FILE_NAME = '<PDF_FILE_NAME>'
+
+
+# Defining Tableau Server configuration details
+config = {
+    'tableau_prod': {  # You can name this whatever you want, ex. tableau_prod, tableau_dev etc.) and can add multiple such environments
+        'server': 'https://<YOUR_SERVER_URL>.com',
+        'api_version': 'API_VERSION',  # Such as 3.11
+        'personal_access_token_name': '<TOKEN_NAME>',
+        'personal_access_token_secret': '<TOKEN_SECRET>',
+        'site_name': '#',  # Default site name. TO be changed if not the default.
+        'site_url': ''
+    }
+}
+
+# Establish a connection with Tableau Server
+conn = TableauServerConnection(config, env='tableau_prod')  # Calling one of the environemnts defined above in the 'config' variable
+conn.sign_in()
+
+# Output all the sites with their ids
+# sites = get_sites_dataframe(conn)
+# print(sites[['name', 'id']])
+
+# Output view names
+views = get_views_dataframe(conn)
+# print(views_df[['name', 'id']])
+
+# Storing the view IDs that are of interest
+dashboard_view_id = views[views['name'] == '<DASHBOARD_VIEW_NAME>']['id'].values[0]
+print(dashboard_view_id)
+
+# Creating a filter list
+# filter_list = ['value 1', 'value 2', 'value 3']
+
+# Defining the PDF
+# The keys could be anything, the values should be in accordance to the Tableau RestAPI documentation
+# pdf_params = {
+#     'type': 'type=A4',
+#     'orientation': 'orientation=Landscape',
+#     'filter': ''  # if using a filter list then replace the '' with 'None'. the 'None' value will be replaced by the values in the filter list one by one
+# }
+
+# Write out to pdf
+pdf = conn.query_view_pdf(view_id=dashboard_view_id)  # if using the pdf parameters from above: pdf = conn.query_view_pdf(view_id = dashboad_view_id, parameter_dict = pdf_params)
+with open(f'test_report.pptx', 'wb') as pdf_file:
+         pdf_file.write(pdf.content)
+
+# Write out to pdf where using a filter to generate separate files for each value in the filter
+# for item in filter_list:
+#     pdf_params['filter'] = f'vf_Sub-Category={item}'
+#     pdf = conn.query_view_pdf(view_id = dashboard_view_id, parameter_dict = pdf_params)
+#     with open(f'<FILE_NAME>_{item}.pdf', 'wb') as pdf_file:
+#         pdf_file.write(pdf.content)
+
+
+conn.sign_out()
